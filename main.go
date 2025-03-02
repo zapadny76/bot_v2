@@ -315,7 +315,7 @@ func getHistory(readingsCollection *mongo.Collection, apartmentNumber int) (stri
 }
 
 func main() {
-	loadEnv()
+	//	loadEnv()
 
 	// Получение токена Telegram и строки подключения MongoDB
 	token := os.Getenv("TELEGRAM_TOKEN")
