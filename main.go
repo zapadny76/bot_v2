@@ -56,6 +56,13 @@ func loadEnv() {
 	}
 }
 
+// Функция для закрытия курсора с обработкой ошибок
+func closeCursor(cursor *mongo.Cursor, ctx context.Context) {
+	if err := cursor.Close(ctx); err != nil {
+		log.Printf("Ошибка при закрытии курсора: %v", err)
+	}
+}
+
 // Проверка существования пользователя по chat_id
 func isUserRegistered(usersCollection *mongo.Collection, chatID int) (bool, error) {
 	filter := bson.M{"chat_id": chatID}
@@ -144,7 +151,7 @@ func sendNewsToUsers(bot *tgbotapi.BotAPI, usersCollection, newsCollection *mong
 		log.Printf("Ошибка получения списка пользователей: %v", err)
 		return
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 
 	// Находим все новости
 	newsCursor, err := newsCollection.Find(context.TODO(), bson.M{}, options.Find().SetSort(bson.M{"date": -1}))
@@ -152,7 +159,7 @@ func sendNewsToUsers(bot *tgbotapi.BotAPI, usersCollection, newsCollection *mong
 		log.Printf("Ошибка получения новостей: %v", err)
 		return
 	}
-	defer newsCursor.Close(context.TODO())
+	defer closeCursor(newsCursor, context.TODO())
 
 	// Преобразуем новости в сообщения
 	var newsMessages []string
@@ -210,7 +217,7 @@ func checkAndSendReminders(bot *tgbotapi.BotAPI, usersCollection, readingsCollec
 		log.Printf("Ошибка получения списка пользователей: %v", err)
 		return
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 
 	// Для каждого пользователя проверяем последние показания
 	for cursor.Next(context.TODO()) {
@@ -267,7 +274,7 @@ func getHistory(readingsCollection *mongo.Collection, apartmentNumber int) (stri
 	if err != nil {
 		return "", err
 	}
-	defer cursor.Close(context.TODO())
+	defer closeCursor(cursor, context.TODO())
 
 	// Формирование ответа
 	response := MSG_HISTORY_TITLE
