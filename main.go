@@ -189,7 +189,11 @@ func sendNewsToUsers(bot *tgbotapi.BotAPI, usersCollection, newsCollection *mong
 
 		for _, message := range newsMessages {
 			msg := tgbotapi.NewMessage(int64(user.ChatID), message)
-			bot.Send(msg)
+			_, err := bot.Send(msg)
+			if err != nil {
+				log.Printf("Ошибка отправки новости пользователю %d: %v", user.ChatID, err)
+				continue
+			}
 		}
 	}
 }
@@ -244,7 +248,11 @@ func checkAndSendReminders(bot *tgbotapi.BotAPI, usersCollection, readingsCollec
 		// Если показания отсутствуют или они старые, отправляем напоминание
 		if lastCold == 0 && lastHot == 0 || (lastCold > 0 && lastHot > 0 && !lastReadingDate.IsZero() && lastReadingDate.Before(deadline)) {
 			msg := tgbotapi.NewMessage(int64(user.ChatID), MSG_REMINDER)
-			bot.Send(msg)
+			_, err := bot.Send(msg)
+			if err != nil {
+				log.Printf("Ошибка отправки напоминания пользователю %d: %v", user.ChatID, err)
+				continue
+			}
 		}
 	}
 }
