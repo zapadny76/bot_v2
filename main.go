@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"errors"
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv" // Библиотека для работы с .env
 	"go.mongodb.org/mongo-driver/bson"
@@ -69,7 +70,7 @@ func isUserRegistered(usersCollection *mongo.Collection, chatID int) (bool, erro
 	result := usersCollection.FindOne(context.TODO(), filter)
 
 	// Если документ не найден, возвращаем false без ошибки
-	if result.Err() == mongo.ErrNoDocuments {
+	if errors.Is(result.Err(), mongo.ErrNoDocuments) {
 		return false, nil
 	}
 
@@ -121,13 +122,12 @@ func getLastReadings(readingsCollection *mongo.Collection, apartmentNumber int) 
 	}
 
 	err := readingsCollection.FindOne(context.TODO(), filter, sort).Decode(&lastReading)
-	if err != nil && err != mongo.ErrNoDocuments {
-		return 0, 0, err
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return 0, 0, nil
 	}
 
-	// Если показания отсутствуют, возвращаем нулевые значения
-	if err == mongo.ErrNoDocuments {
-		return 0, 0, nil
+	if err != nil {
+		return 0, 0, err
 	}
 
 	return lastReading.Cold, lastReading.Hot, nil
@@ -233,7 +233,11 @@ func checkAndSendReminders(bot *tgbotapi.BotAPI, usersCollection, readingsCollec
 
 		// Находим последние показания для квартиры
 		lastCold, lastHot, err := getLastReadings(readingsCollection, user.ApartmentNumber)
-		if err != nil && err != mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			continue
+		}
+
+		if err != nil {
 			log.Printf("Ошибка получения последних показаний для квартиры %d: %v", user.ApartmentNumber, err)
 			continue
 		}
@@ -245,7 +249,11 @@ func checkAndSendReminders(bot *tgbotapi.BotAPI, usersCollection, readingsCollec
 				Date time.Time `bson:"date"`
 			}
 			err := readingsCollection.FindOne(context.TODO(), bson.M{"apartment_number": user.ApartmentNumber}, options.FindOne().SetSort(bson.M{"date": -1})).Decode(&lastReading)
-			if err != nil && err != mongo.ErrNoDocuments {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				continue
+			}
+
+			if err != nil {
 				log.Printf("Ошибка получения даты последнего показания для квартиры %d: %v", user.ApartmentNumber, err)
 				continue
 			}
@@ -439,12 +447,13 @@ func main() {
 			}
 
 			err := usersCollection.FindOne(context.TODO(), bson.M{"chat_id": int(chatID)}).Decode(&user)
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Вы не зарегистрированы. Введите /start для начала.")
+				bot.Send(msg)
+				continue
+			}
+
 			if err != nil {
-				if err == mongo.ErrNoDocuments {
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Вы не зарегистрированы. Введите /start для начала.")
-					bot.Send(msg)
-					continue
-				}
 				log.Printf("Ошибка получения номера квартиры: %v", err)
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, MSG_ERROR_OCCURRED)
 				bot.Send(msg)
@@ -537,7 +546,11 @@ func main() {
 
 			// Получаем последние показания для квартиры
 			lastCold, lastHot, err := getLastReadings(readingsCollection, user.ApartmentNumber)
-			if err != nil && err != mongo.ErrNoDocuments {
+			if errors.Is(err, mongo.ErrNoDocuments) {
+				continue
+			}
+
+			if err != nil {
 				log.Printf("Ошибка получения последних показаний: %v", err)
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, MSG_ERROR_OCCURRED)
 				bot.Send(msg)
