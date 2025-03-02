@@ -3,16 +3,17 @@ package main
 import (
 	"context"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/joho/godotenv" // Библиотека для работы с .env
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Константы для минимального и максимального номера квартиры и ID администратора
@@ -554,7 +555,7 @@ func main() {
 				continue
 			}
 
-			// Сохраняем показания
+			// Сохраняем показания вместе с номером квартиры
 			receivedTime, err := saveReadings(readingsCollection, user.ApartmentNumber, cold, hot)
 			if err != nil {
 				log.Printf("Ошибка сохранения показаний: %v", err)
