@@ -13,7 +13,7 @@ import (
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/joho/godotenv"
+	//	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -195,9 +195,9 @@ func clearUserState(app *AppContext, chatID int64) {
 // Инициализация приложения
 func initApp() (*AppContext, error) {
 	// Загрузка переменных окружения
-	if err := godotenv.Load(".env"); err != nil {
-		log.Printf("Предупреждение: не удалось загрузить .env файл: %v", err)
-	}
+	//	if err := godotenv.Load(".env"); err != nil {
+	//		log.Printf("Предупреждение: не удалось загрузить .env файл: %v", err)
+	//	}
 
 	// Получение токена и URI MongoDB из переменных окружения
 	token := os.Getenv("TELEGRAM_TOKEN")
