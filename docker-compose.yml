@@ -1,25 +1,32 @@
+version: '3.8'  # Убедитесь, что используете последнюю версию схемы
 
 services:
   bot:
     build: .
     environment:
-      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-      - MONGO_URI=${MONGO_URI}
-      - ADMIN_IDS=${ADMIN_IDS}
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+      MONGO_URI: ${MONGO_URI}
+      ADMIN_IDS: ${ADMIN_IDS}
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy  # Убедитесь, что MongoDB готов к работе
     networks:
       - botnet
 
   mongodb:
     image: mongo:latest
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=example
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
     volumes:
       - mongodb_data:/data/db
     networks:
       - botnet
+    healthcheck:  # Добавление проверки состояния для MongoDB
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 volumes:
   mongodb_data:

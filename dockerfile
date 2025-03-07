@@ -1,29 +1,17 @@
-# Используем официальный Go образ как базовый
-FROM golang:1.20 AS builder
+# syntax=docker/dockerfile:1.4
+FROM golang:1.24 AS builder
 
-# Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /app
 
-# Копируем go.mod и go.sum файлы в рабочую директорию
-COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/root/.cache \
+    --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=bind,target=. \
+    go build -o /bot ./main.go
 
-# Загружаем зависимости
-RUN go mod download
+FROM alpine:3.18
 
-# Копируем исходный код в рабочую директорию
-COPY . .
-
-# Сборка приложения
-RUN CGO_ENABLED=0 GOOS=linux go build -o bot ./main.go
-
-# Создаем минимальный образ для запуска приложения
-FROM alpine:latest
-
-# Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /root/
 
-# Копируем скомпилированное приложение из builder стадии
-COPY --from=builder /app/bot .
+COPY --from=builder /bot .
 
-# Указываем команду для запуска приложения
 CMD ["./bot"]

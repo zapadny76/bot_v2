@@ -13,7 +13,8 @@ import (
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	//	"github.com/joho/godotenv"
+	"github.com/joho/godotenv"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -195,9 +196,9 @@ func clearUserState(app *AppContext, chatID int64) {
 // Инициализация приложения
 func initApp() (*AppContext, error) {
 	// Загрузка переменных окружения
-	//	if err := godotenv.Load(".env"); err != nil {
-	//		log.Printf("Предупреждение: не удалось загрузить .env файл: %v", err)
-	//	}
+	if err := godotenv.Load(".env"); err != nil {
+		log.Printf("Предупреждение: не удалось загрузить .env файл: %v", err)
+	}
 
 	// Получение токена и URI MongoDB из переменных окружения
 	token := os.Getenv("TELEGRAM_TOKEN")
@@ -310,23 +311,23 @@ func initApp() (*AppContext, error) {
 func createIndexes(ctx context.Context, usersCollection, readingsCollection, newsCollection, adminsCollection *mongo.Collection) {
 	// Индекс для быстрого поиска пользователей по chat_id
 	usersCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys:    bson.D{{"chat_id", 1}},
+		Keys:    bson.D{{Key: "chat_id", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	})
 
 	// Индекс для быстрого поиска показаний по apartment_number и date
 	readingsCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys: bson.D{{"apartment_number", 1}, {"date", -1}},
+		Keys: bson.D{{Key: "apartment_number", Value: 1}, {Key: "date", Value: -1}},
 	})
 
 	// Индекс для новостей
 	newsCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys: bson.D{{"date", -1}},
+		Keys: bson.D{{Key: "date", Value: -1}},
 	})
 
 	// Индекс для администраторов
 	adminsCollection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys:    bson.D{{"chat_id", 1}},
+		Keys:    bson.D{{Key: "chat_id", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	})
 }
